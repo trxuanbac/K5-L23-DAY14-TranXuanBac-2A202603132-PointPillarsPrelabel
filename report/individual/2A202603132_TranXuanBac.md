@@ -25,29 +25,39 @@ Công cụ hỗ trợ đối chiếu điểm LiDAR với ảnh camera đã đư�
 
 | Cấu hình | Xóa | Thêm | Sửa | Chi phí |
 |---|---:|---:|---:|---:|
-| Gốc | 41 | 3 | 3 | 16.80 |
-| `best_config.json` | | | | |
+| Gốc | 41 | 3 | 3 | 16,8 |
+| `best_config.json` | 7 | 4 | 3 | 7,6 |
 
-- Tham số đã đổi trong `best_config.json`: ...
-- Kết quả leave-one-out (dán các dòng `scripts/pp_sweep.py` in ra): ...
-- Cấu hình có ổn định trên từng frame không? Vì sao tôi vẫn chọn (hoặc không chọn) nó: ...
+`best_config.json` tăng `score_thr` từ `0.1` lên `0.5` và giữ `min_points=0`. Khi `score_thr=0.5`, cả ba giá trị `min_points` đã thử đều cho tổng chi phí 7,6 điểm.
+
+| Frame giữ lại | `score_thr` chọn từ hai frame còn lại | `min_points` | Chi phí trên frame giữ lại | Mức thấp nhất trong lưới |
+|---|---:|---:|---:|---:|
+| `s01f18` | 0.5 | 0 | 4,3 | 4,3 |
+| `s02f10` | 0.4 | 0 | 3,5 | 2,3 |
+| `s04f48` | 0.5 | 0 | 1,0 | 0,3 |
+
+Ngưỡng được chọn đổi ở một trong ba lượt leave-one-out. Chi phí trên `s02f10` và `s04f48` lần lượt cao hơn mức thấp nhất trong lưới 1,2 và 0,7 điểm. Cấu hình `0.5/0` được dùng cho tập B vì có tổng chi phí thấp nhất trên cả ba frame tập A.
 
 ## 3. Trước/sau (bước 8)
 
-![so sánh](../../d14_<ID>/compare/<frame>.jpg)
+![So sánh cấu hình trên frame s01f18](../../d14_2A202603132/compare/s01f18.jpg)
 
-- `scripts/pp_compare.py` báo giảm (hoặc tăng) ...% công sửa trên tập A.
-- Dự đoán ở mục 1 đúng hay sai? Giải thích bằng số box xóa/thêm/sửa: ...
+- Trên 3 frame tập A, `scripts/pp_compare.py` đo được tổng chi phí sửa giảm từ 16,8 xuống 7,6, tương đương khoảng 55%, khi tăng `score_thr` từ `0.1` lên `0.5`.
+- Cấu hình dự đoán ở mục 1 (`score_thr=0.4`, `min_points=5`) có 14 hộp cần xóa, 3 hộp cần thêm và 3 hộp cần sửa, tổng 8,7 điểm trong `sweep.csv`.
+- Kết quả ủng hộ dự đoán rằng tăng `score_thr` giúp giảm số hộp thừa. So với cấu hình dự đoán, cấu hình `0.5/0` giảm 7 hộp cần xóa, tăng 1 hộp cần thêm và giữ 3 hộp cần sửa. Chênh lệch là 1,1 điểm theo công thức tính chi phí. Ở cả hai ngưỡng `score_thr=0.4` và `0.5`, ba mức `min_points` đã thử cho cùng chi phí tại mỗi ngưỡng, nên tập A chưa cho thấy lợi ích riêng của `min_points=5` trong hai nhóm này.
+- Phần đối chiếu được diễn đạt với hỗ trợ AI dựa trên các số liệu đã đo.
 
 ## 4. Tập B
 
-Số đo từ `scripts/pp_prelabel.py --frames d14_<ID>/frames_B.txt --config d14_<ID>/best_config.json --gt d14_<ID>/ref_B.json`:
+Số liệu được đo trên 12 frame tập B với `best_config.json` và `ref_B.json` xuất từ Job 34. File tham chiếu có 149 cuboid.
 
 | Xóa | Thêm | Sửa | Chi phí |
 |---:|---:|---:|---:|
-| | | | |
+| 28 | 24 | 2 | 33,4 |
 
-- Loại box tốn công sửa nhất ở tập B: ...
+- Theo lớp hộp cần xử lý, **Car** tốn nhiều công nhất với 16 hộp cần xóa, 11 hộp cần thêm và 2 hộp cần sửa, tương ứng 16,8 điểm.
+- Khi rà Job 34, trợ lý dùng gợi ý từ YOLOX và PointPillars rồi đối chiếu ảnh camera và LiDAR. Trợ lý đã hỗ trợ đổi lớp cho 5 hộp, thêm 18 hộp dạng Shape và xóa 26 hộp thừa trên CVAT.
+- Ở frame `s02f30`, chiều rộng hộp Car `pp_id=8` còn chưa chắc chắn vì ảnh camera và điểm LiDAR chỉ cho thấy một phần vị trí này.
 
 ## 5. Giới hạn
 
